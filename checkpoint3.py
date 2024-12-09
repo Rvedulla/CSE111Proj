@@ -60,18 +60,39 @@ def view_cart(conn, user_id):
 
 def add_product_to_cart(conn, user_id):
     """Add a product to the cart for the logged-in user."""
-    product_id = input("Enter product ID: ").strip()
-    quantity = input("Enter quantity: ").strip()
-
     try:
         cursor = conn.cursor()
-        # Insert values without explicitly setting 'id'
-        cursor.execute("""
-            INSERT INTO Cart (user_id, product_id, quantity)
-            VALUES (?, ?, ?)
-        """, (user_id, product_id, quantity))
-        conn.commit()
-        print("Product added to cart successfully!")
+
+        # Display available products
+        cursor.execute("SELECT id, name, price FROM Product")
+        products = cursor.fetchall()
+
+        if not products:
+            print("No products available to add to cart.")
+            return
+
+        print("\n=== Available Products ===")
+        for idx, (product_id, product_name, product_price) in enumerate(products, start=1):
+            print(f"{idx}. {product_name} (Price: ${product_price:.2f})")
+
+        # Prompt user to select a product
+        choice = int(input("Enter the number of the product you want to add to your cart: ").strip())
+        if 1 <= choice <= len(products):
+            selected_product = products[choice - 1]
+            product_id = selected_product[0]
+            product_name = selected_product[1]
+
+            quantity = int(input(f"Enter quantity for '{product_name}': ").strip())
+
+            # Add the product to the cart
+            cursor.execute("""
+                INSERT INTO Cart (user_id, product_id, quantity)
+                VALUES (?, ?, ?)
+            """, (user_id, product_id, quantity))
+            conn.commit()
+            print(f"Product '{product_name}' added to cart successfully!")
+        else:
+            print("Invalid choice.")
     except sqlite3.Error as e:
         print(f"Error adding product to cart: {e}")
 

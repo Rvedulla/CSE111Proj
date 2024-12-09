@@ -23,15 +23,18 @@ def display_menu():
     print("8. Exit")
 
 def view_all_users(conn):
-    """Retrieve and display all users."""
+    """Retrieve and display specific details about all users."""
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM User")
+        cursor.execute("SELECT id, username, email FROM User")  
         rows = cursor.fetchall()
         if rows:
-            print("\n=== Users ===")
+            print("\nUsers:")
+            print(f"{'ID':<5} {'Username':<15} {'Email':<25}")
+            print("-" * 45)
             for row in rows:
-                print(row)
+                user_id, username, email = row
+                print(f"{user_id:<5} {username:<15} {email:<25}")
         else:
             print("No users found.")
     except sqlite3.Error as e:
@@ -95,7 +98,7 @@ def create_order(conn):
     """Create a new order."""
     user_id = input("Enter user ID: ").strip()
 
-    # Step 1: Retrieve the cart items for the user and calculate the total amount
+    
     try:
         cursor = conn.cursor()
         cursor.execute("""
@@ -112,7 +115,6 @@ def create_order(conn):
         
         total_amount = sum(price * quantity for price, quantity in cart_items)
 
-        # Step 2: Get order details from the user
         name = input("Enter name: ").strip()
         email = input("Enter email: ").strip()
         address = input("Enter address: ").strip()
@@ -122,14 +124,12 @@ def create_order(conn):
         zip_code = input("Enter zip code: ").strip()
         country = input("Enter country: ").strip()
 
-        # Step 3: Insert the order into the Orders table
         cursor.execute("""
             INSERT INTO Orders (user_id, name, email, address, address2, city, state, zip_code, country, total_amount)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (user_id, name, email, address, address2, city, state, zip_code, country, total_amount))
         conn.commit()
 
-        # Step 4: Clear the cart for the user after successful order creation
         cursor.execute("""
             DELETE FROM Cart WHERE user_id = ?
         """, (user_id,))
@@ -145,12 +145,19 @@ def view_orders(conn):
     """View all orders."""
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Orders")
+        # Adjust the query to select valid columns
+        cursor.execute("""
+            SELECT user_id, name, email, address, city, state, zip_code, country, total_amount
+            FROM Orders
+        """)
         rows = cursor.fetchall()
         if rows:
-            print("\n=== Orders ===")
+            print("\nOrders:")
+            print(f"{'user_id':<8} {'name':<15} {'email':<25} {'address':<25} {'city':<15} {'state':<10} {'zip_code':<10} {'country':<15} {'total_amount':<12}")
+            print("-" * 140)
             for row in rows:
-                print(row)
+                user_id, name, email, address, city, state, zip_code, country, total_amount = row
+                print(f"{user_id:<8} {name:<15} {email:<25} {address:<25} {city:<15} {state:<10} {zip_code:<10} {country:<15} {total_amount:<12.2f}")
         else:
             print("No orders found.")
     except sqlite3.Error as e:
@@ -175,33 +182,79 @@ def add_review(conn):
 
 def main():
     """Main function to run the application."""
-    database = "Checkpoint2-dbase.sqlite3"  # Update with your database file name
+    database = "Checkpoint2-dbase.sqlite3" 
     conn = connect_to_database(database)
     if conn is None:
         return
     
     while True:
-        display_menu()
-        choice = input("Enter your choice (1-8): ").strip()
-        if choice == "1":
-            view_all_users(conn)
-        elif choice == "2":
-            view_all_products(conn)
-        elif choice == "3":
-            view_cart(conn)
-        elif choice == "4":
-            add_product_to_cart(conn)
-        elif choice == "5":
-            create_order(conn)
-        elif choice == "6":
-            view_orders(conn)
-        elif choice == "7":
-            add_review(conn)
-        elif choice == "8":
-            print("Exiting the application. Goodbye!")
-            break
+        print("\n=== Welcome to the Application ===")
+        login = input("Do you have an account? (1 for Yes or 2 for No): ").strip()
+        if login == "1":
+            user_id = input("Enter your User ID to log in: ").strip()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, username FROM User WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+
+            if user:
+                print(f"Welcome, {user[1]}!")
+                if user_id == "1":  # Assuming ID 1 is the admin user
+                    print("Admin mode activated.")
+                    while True:
+                        display_menu()
+                        choice = input("Enter your choice (1-8): ").strip()
+                        if choice == "1":
+                            view_all_users(conn)
+                        elif choice == "2":
+                            view_all_products(conn)
+                        elif choice == "3":
+                            view_cart(conn)
+                        elif choice == "4":
+                            add_product_to_cart(conn)
+                        elif choice == "5":
+                            create_order(conn)
+                        elif choice == "6":
+                            view_orders(conn)
+                        elif choice == "7":
+                            add_review(conn)
+                        elif choice == "8":
+                            print("Exiting Admin mode. Goodbye!")
+                            break
+                        else:
+                            print("Invalid choice. Please try again.")
+                else:
+                    print("User mode activated.")
+                    while True:
+                        print("\n=== User Menu ===")
+                        print("1. View products")
+                        print("2. View your cart")
+                        print("3. Add a product to your cart")
+                        print("4. Create an order")
+                        print("5. View your orders")
+                        print("6. Exit")
+                        
+                        choice = input("Enter your choice (1-6): ").strip()
+                        if choice == "1":
+                            view_all_products(conn)
+                        elif choice == "2":
+                            view_cart(conn)
+                        elif choice == "3":
+                            add_product_to_cart(conn)
+                        elif choice == "4":
+                            create_order(conn)
+                        elif choice == "5":
+                            view_orders(conn)
+                        elif choice == "6":
+                            print("Logging out. Goodbye!")
+                            break
+                        else:
+                            print("Invalid choice. Please try again.")
+            else:
+                print("Invalid User ID. Please try again.")
+        elif login == "2":
+            print("Please contact the admin to create an account.")
         else:
-            print("Invalid choice. Please try again.")
+            print("Invalid input. Please try again.")
     
     conn.close()
 

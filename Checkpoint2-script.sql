@@ -1,13 +1,14 @@
 DROP TABLE IF EXISTS Cart;
 DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Orders;
-DROP TABLE IF EXISTS Category;
 DROP TABLE IF EXISTS Review;
 DROP TABLE IF EXISTS Product;
+DROP TABLE IF EXISTS OrderDetails;
+DROP TABLE IF EXISTS Category;
+
 
 CREATE TABLE User (
-    ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    id INTEGER UNIQUE NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     email TEXT NOT NULL,
     password_hash TEXT NOT NULL,
@@ -15,8 +16,7 @@ CREATE TABLE User (
 );
 
 CREATE TABLE Product (
-    ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    id INTEGER UNIQUE NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
     price REAL NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE Cart (
 );
 
 CREATE TABLE Orders (
-    ROWID INTEGER PRIMARY KEY AUTOINCREMENT, 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -48,25 +48,24 @@ CREATE TABLE Orders (
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
 
-CREATE TABLE Category (
-    ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    id INTEGER UNIQUE NOT NULL,
-    item_id INTEGER NOT NULL,
-    item_name TEXT NOT NULL,
-    item_price REAL NOT NULL,
-    item_quantity INTEGER,
-    FOREIGN KEY (item_id) REFERENCES Product(id)
-);
-
-CREATE TABLE Review (
-    ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER,
+CREATE TABLE OrderDetails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
-    text_review TEXT,
-    FOREIGN KEY (order_id) REFERENCES Orders(ROWID),
+    quantity INTEGER NOT NULL,
+    price REAL NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES Orders(id),
     FOREIGN KEY (product_id) REFERENCES Product(id)
 );
 
+CREATE TABLE Review (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER,
+    product_id INTEGER NOT NULL,
+    text_review TEXT,
+    FOREIGN KEY (order_id) REFERENCES Orders(id),
+    FOREIGN KEY (product_id) REFERENCES Product(id)
+);
 
 -- Insert data into tables
 INSERT INTO User (id, username, email, password_hash, is_admin) VALUES
@@ -85,9 +84,9 @@ INSERT INTO Cart (id, user_id, product_id, quantity) VALUES
 INSERT INTO Orders (user_id, name, email, address, address2, city, state, zip_code, country, total_amount, paid) VALUES
 (1, 'John Doe', 'johndoe@example.com', '123 Main St', NULL, 'Anytown', 'State', '12345', 'Country', 2000.00, 1);
 
-INSERT INTO Category (id, item_id, item_name, item_price, item_quantity) VALUES
-(1, 1, 'Laptop', 1200.00, 10),
-(2, 2, 'Phone', 800.00, 20);
+INSERT INTO OrderDetails (order_id, product_id, quantity, price) VALUES
+(1, 1, 1, 1200.00),
+(1, 2, 2, 800.00);
 
 INSERT INTO Review (order_id, product_id, text_review) VALUES
 (1, 1, 'Excellent product!'),

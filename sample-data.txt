@@ -1,0 +1,28 @@
+-- Sample data insertion
+
+INSERT INTO User (id, username, email, password_hash, is_admin) VALUES
+(1, 'johndoe', 'johndoe@example.com', 'hashedpassword123', 0),
+(2, 'adminuser', 'admin@example.com', 'adminpassword', 1);
+
+INSERT INTO Product (id, name, description, price, stock) VALUES
+(1, 'Laptop', 'A powerful laptop', 1200.00, 10),
+(2, 'Phone', 'Latest smartphone', 800.00, 20);
+
+INSERT INTO Cart (id, user_id, product_id, size, quantity) VALUES
+(1, 1, 1, 'Medium', 1),
+(2, 1, 2, 'Large', 2);
+
+INSERT INTO Orders (id, user_id, name, email, address, address2, city, state, zip_code, country, total_amount, paid) VALUES
+(1, 1, 'John Doe', 'johndoe@example.com', '123 Main St', NULL, 'Anytown', 'State', '12345', 'Country', 2000.00, 1);
+
+INSERT INTO OrderItem (id, order_id, product_id, quantity, price, size) VALUES
+(1, 1, 1, 1, 1200.00, 'Medium'),
+(2, 1, 2, 1, 800.00, 'Large');
+
+INSERT INTO Category (id, item_id, item_name, item_price, size, item_quantity) VALUES
+(1, 1, 'Laptop', 1200.00, 'Medium', 10),
+(2, 2, 'Phone', 800.00, 'Large', 20);
+
+INSERT INTO Review (id, order_id, quantity, price, product_id) VALUES
+(1, 1, 1, 1200.00, 1),
+(2, 1, 2, 800.00, 2);

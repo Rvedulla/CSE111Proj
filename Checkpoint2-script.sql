@@ -60,7 +60,7 @@ CREATE TABLE Category (
 
 CREATE TABLE Review (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
+    order_id INTEGER,
     product_id INTEGER NOT NULL,
     text_review TEXT,
     FOREIGN KEY (order_id) REFERENCES Orders(ROWID),
@@ -70,8 +70,9 @@ CREATE TABLE Review (
 
 -- Insert data into tables
 INSERT INTO User (id, username, email, password_hash, is_admin) VALUES
-(1, 'johndoe', 'johndoe@example.com', 'hashpassword123', 0),
-(2, 'adminuser', 'admin@example.com', 'adminpassword', 1);
+(1, 'johndoe', 'johndoe@example.com', 'john', 0),
+(2, 'janedoe', 'janedoe@example.com', 'jane', 0),
+(3, 'adminuser', 'admin@example.com', 'admin', 1);
 
 INSERT INTO Product (id, name, description, price, stock) VALUES
 (1, 'Laptop', 'new laptop', 1200.00, 10),

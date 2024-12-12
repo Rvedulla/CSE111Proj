@@ -11,29 +11,34 @@ def connect_to_database(db_file):
         return None
 
 def display_menu(is_admin):
-    """Display the main menu with options based on user role."""
-    print("\n=== Main Menu ===")
+    """Display the menu based on user type."""
+    print("\nMenu:")
     if is_admin:
-        print("1. View all users")
-    print("2. View your cart")
-    print("3. Add a product to the cart")
-    print("4. Create an order")
-    print("5. View your orders")
-    print("6. View order details")  # New option for viewing order details
-    print("7. Add a review for a product")
-    print("8. Remove an item from your cart")
-    print("9. Exit")
+        print("1. View All Users")
+    print("2. View Cart")
+    print("3. Add Product to Cart")
+    print("4. Create Order")
+    print("5. View Orders")
+    print("6. View Order Details")
+    print("7. Add Review")
+    print("8. Remove Item from Cart")
+    print("9. View Reviews")  # New menu option
+    print("10. Exit")
 
 def view_all_users(conn):
     """Retrieve and display all users (Admin only)."""
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM User")
+        cursor.execute("SELECT id, username, email, is_admin FROM User")
         rows = cursor.fetchall()
+
         if rows:
             print("\n=== Users ===")
-            for row in rows:
-                print(row)
+            print(f"{'ID':<5} {'Username':<20} {'Email':<30} {'Admin':<6}")
+            print("-" * 65)
+            for user_id, username, email, is_admin in rows:
+                admin_status = "Yes" if is_admin else "No"
+                print(f"{user_id:<5} {username:<20} {email:<30} {admin_status:<6}")
         else:
             print("No users found.")
     except sqlite3.Error as e:
@@ -50,10 +55,17 @@ def view_cart(conn, user_id):
             WHERE Cart.user_id = ?
         """, (user_id,))
         rows = cursor.fetchall()
+
         if rows:
             print("\n=== Your Cart ===")
-            for row in rows:
-                print(row)
+            print(f"{'ID':<5} {'Product Name':<30} {'Quantity':<10}")
+            print("-" * 50)
+            total_items = 0
+            for cart_id, product_name, quantity in rows:
+                print(f"{cart_id:<5} {product_name:<30} {quantity:<10}")
+                total_items += quantity
+            print("-" * 50)
+            print(f"Total Items: {total_items}")
         else:
             print("No items in cart.")
     except sqlite3.Error as e:
@@ -164,13 +176,22 @@ def view_orders(conn, user_id):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT * FROM Orders WHERE user_id = ?
+            SELECT id, total_amount, paid, name, city, state
+            FROM Orders
+            WHERE user_id = ?
         """, (user_id,))
         rows = cursor.fetchall()
+        
         if rows:
             print("\n=== Your Orders ===")
-            for row in rows:
-                print(row)
+            for order in rows:
+                order_id, total_amount, paid, name, city, state = order
+                print(f"Order ID: {order_id}")
+                print(f"Recipient Name: {name}")
+                print(f"Shipping Address: {city}, {state}")
+                print(f"Total Amount: ${total_amount:.2f}")
+                print(f"Paid: {'Yes' if paid else 'No'}")
+                print("-" * 30)
         else:
             print("No orders found.")
     except sqlite3.Error as e:
@@ -321,8 +342,34 @@ def view_order_details(conn, user_id):
     except sqlite3.Error as e:
         print(f"Error retrieving order details: {e}")
 
+def view_reviews(conn):
+    """Retrieve and display all reviews."""
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                Review.id,
+                Product.name AS product_name,
+                Review.text_review
+            FROM Review
+            JOIN Product ON Review.product_id = Product.id
+        """)
+        rows = cursor.fetchall()
+        
+        if rows:
+            print("\n=== Reviews ===")
+            for review in rows:
+                review_id, product_name, text_review = review
+                print(f"Review ID: {review_id}")
+                print(f"Product: {product_name}")
+                print(f"Review: {text_review}")
+                print("-" * 30)
+        else:
+            print("No reviews found.")
+    except sqlite3.Error as e:
+        print(f"Error retrieving reviews: {e}")
 
-# Update the main function to include the new option
+
 def main():
     """Main function to run the application."""
     database = "Checkpoint2-dbase.sqlite3"
@@ -330,14 +377,13 @@ def main():
     if conn is None:
         return
     
-    # Login and greet the user
     user_id, is_admin = login(conn)
     if user_id is None:
         return
 
     while True:
         display_menu(is_admin)
-        choice = input("Enter your choice (1-9): ").strip()
+        choice = input("Enter your choice (1-10): ").strip()
 
         if choice == "1" and is_admin:
             view_all_users(conn)
@@ -350,12 +396,14 @@ def main():
         elif choice == "5":
             view_orders(conn, user_id)
         elif choice == "6":
-            view_order_details(conn, user_id)  # Call the new function here
+            view_order_details(conn, user_id)  
         elif choice == "7":
             add_review(conn)
         elif choice == "8":
             remove_item_from_cart(conn, user_id)
         elif choice == "9":
+            view_reviews(conn) 
+        elif choice == "10":
             print("Exiting the application. Goodbye!")
             break
         else:

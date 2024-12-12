@@ -76,7 +76,6 @@ def add_product_to_cart(conn, user_id):
     try:
         cursor = conn.cursor()
 
-        # Display available products
         cursor.execute("SELECT id, name, price FROM Product")
         products = cursor.fetchall()
 
@@ -97,7 +96,6 @@ def add_product_to_cart(conn, user_id):
 
             quantity = int(input(f"Enter quantity for '{product_name}': ").strip())
 
-            # Add the product to the cart
             cursor.execute("""
                 INSERT INTO Cart (user_id, product_id, quantity)
                 VALUES (?, ?, ?)
@@ -114,7 +112,6 @@ def create_order_with_details(conn, user_id):
     try:
         cursor = conn.cursor()
         
-        # Retrieve items from the cart for the user
         cursor.execute("""
             SELECT Cart.product_id, Product.price, Cart.quantity
             FROM Cart
@@ -127,10 +124,8 @@ def create_order_with_details(conn, user_id):
             print("No items in the cart for this user.")
             return
 
-        # Calculate the total amount for the order
         total_amount = sum(price * quantity for _, price, quantity in cart_items)
 
-        # Get order details from the user
         name = input("Enter name: ").strip()
         email = input("Enter email: ").strip()
         address = input("Enter address: ").strip()
@@ -140,17 +135,14 @@ def create_order_with_details(conn, user_id):
         zip_code = input("Enter zip code: ").strip()
         country = input("Enter country: ").strip()
 
-        # Insert the order into the Orders table
         cursor.execute("""
             INSERT INTO Orders (user_id, name, email, address, address2, city, state, zip_code, country, total_amount)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (user_id, name, email, address, address2, city, state, zip_code, country, total_amount))
         conn.commit()
 
-        # Get the last inserted order ID
         order_id = cursor.lastrowid
 
-        # Populate the OrderDetails table
         for product_id, price, quantity in cart_items:
             cursor.execute("""
                 INSERT INTO OrderDetails (order_id, product_id, quantity, price)
@@ -201,7 +193,6 @@ def add_review(conn):
     """Add an anonymous text review for a product."""
     print("\n=== Select a Product to Review ===")
     
-    # Display available products
     cursor = conn.cursor()
     cursor.execute("SELECT id, name FROM Product")
     products = cursor.fetchall()
@@ -210,17 +201,14 @@ def add_review(conn):
         for idx, (product_id, product_name) in enumerate(products, start=1):
             print(f"{idx}. {product_name}")
         
-        # Prompt user to select a product
         choice = int(input("Enter the number of the product you want to review: ").strip())
         if 1 <= choice <= len(products):
             selected_product = products[choice - 1]
             product_id = selected_product[0]
             product_name = selected_product[1]
             
-            # Ask for review text
             text_review = input(f"Enter your text review for the product '{product_name}': ").strip()
 
-            # Insert the review into the Review table (no user_id)
             try:
                 cursor.execute("""
                     INSERT INTO Review (product_id, text_review)
@@ -240,7 +228,6 @@ def remove_item_from_cart(conn, user_id):
     try:
         cursor = conn.cursor()
 
-        # Retrieve all items in the cart for the user
         cursor.execute("""
             SELECT Cart.id, Product.name, Cart.quantity
             FROM Cart
@@ -253,12 +240,10 @@ def remove_item_from_cart(conn, user_id):
             print("No items in the cart to remove.")
             return
 
-        # Display the cart items to the user
         print("\n=== Your Cart ===")
         for idx, (cart_id, product_name, quantity) in enumerate(cart_items, start=1):
             print(f"{idx}. {product_name} (Quantity: {quantity})")
 
-        # Prompt the user to select an item to remove
         item_number = int(input("\nEnter the number of the item you want to remove: ").strip())
         
         if 1 <= item_number <= len(cart_items):
@@ -285,7 +270,6 @@ def login(conn):
         return None, None
 
     user_id, _, password_hash, is_admin = user
-    # Verify the password (you could use a hash comparison here)
     if password != password_hash:
         print("Incorrect password.")
         return None, None
@@ -299,7 +283,6 @@ def view_order_details(conn, user_id):
     try:
         cursor = conn.cursor()
         
-        # Retrieve all orders for the user
         cursor.execute("""
             SELECT id, total_amount
             FROM Orders
@@ -311,18 +294,15 @@ def view_order_details(conn, user_id):
             print("No orders found.")
             return
 
-        # Display orders for the user
         print("\n=== Your Orders ===")
         for idx, (order_id, total_amount) in enumerate(orders, start=1):
             print(f"{idx}. Order ID: {order_id}, Total: ${total_amount:.2f},")
 
-        # Prompt user to select an order to view details
         choice = int(input("\nEnter the number of the order to view details: ").strip())
 
         if 1 <= choice <= len(orders):
             selected_order_id = orders[choice - 1][0]
             
-            # Retrieve details for the selected order
             cursor.execute("""
                 SELECT Product.name, OrderDetails.quantity, OrderDetails.price
                 FROM OrderDetails
